@@ -41,10 +41,12 @@ class WebViewController: UIViewController {
         wkWebView.frame = view.bounds
         
         guard let urlString = news?.url else {
+            debugPrint("url为空, 无法加载")
             return
         }
         print(urlString)
         guard let url = URL(string: urlString) else {
+            debugPrint("URL有误, 无法加载")
             return
         }
         
@@ -73,7 +75,7 @@ extension WebViewController: WKUIDelegate, WKNavigationDelegate {
     }
     
     func webView(_ webView: WKWebView, decidePolicyFor navigationResponse: WKNavigationResponse, decisionHandler: @escaping (WKNavigationResponsePolicy) -> Void) {
-        print("接受请求后是否允许");
+        print("接受响应后是否允许");
         decisionHandler(WKNavigationResponsePolicy.allow)
     }
     
@@ -99,11 +101,15 @@ extension WebViewController: WKUIDelegate, WKNavigationDelegate {
     }
     
     func webView(_ webView: WKWebView, didReceive challenge: URLAuthenticationChallenge, completionHandler: @escaping (URLSession.AuthChallengeDisposition, URLCredential?) -> Void) {
-        print("不受信任");
-        guard let serverTrust = challenge.protectionSpace.serverTrust else {
-            return
+        
+        if challenge.protectionSpace.authenticationMethod == NSURLAuthenticationMethodServerTrust {
+            print("不受信任的网站: %@", webView.url?.absoluteString ?? "");
+            guard let serverTrust = challenge.protectionSpace.serverTrust else {
+                return
+            }
+            let card = URLCredential(trust: serverTrust)
+            completionHandler(URLSession.AuthChallengeDisposition.useCredential,card);
         }
-        let card = URLCredential(trust: serverTrust)
-        completionHandler(URLSession.AuthChallengeDisposition.useCredential,card);
+        
     }
 }
